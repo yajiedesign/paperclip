@@ -26,6 +26,8 @@ module Paperclip
       ActiveRecord::ConnectionAdapters::AbstractAdapter.send(:include, Paperclip::Schema)
       ActiveRecord::ConnectionAdapters::Table.send(:include, Paperclip::Schema)
       ActiveRecord::ConnectionAdapters::TableDefinition.send(:include, Paperclip::Schema)
+
+      ActionController::Base.send(:include, Paperclip::Storage::Database::ControllerClassMethods)
     end
   end
 end

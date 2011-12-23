@@ -66,6 +66,7 @@ Given /^I update my user view to include the attachment$/ do
       """
       <p>Name: <%= @user.name %></p>
       <p>Attachment: <%= image_tag @user.attachment.url %></p>
+      <p>Download Attachment: <%= link_to 'Download', @user.attachment.url %></p>
       """
   }
 end
@@ -76,6 +77,51 @@ Given /^I add this snippet to the User model:$/ do |snippet|
     content = File.read(file_name)
     File.open(file_name, 'w') { |f| f << content.sub(/end\Z/, "#{snippet}\nend") }
   end
+end
+
+Given /^I add this snippet to the Users controller:$/ do |snippet|
+  file_name = "app/controllers/users_controller.rb"
+  in_current_dir do
+    content = File.read(file_name)
+    File.open(file_name, 'w') do |f|
+      f << content.sub(/^class UsersController < ApplicationController$/, "class UsersController < ApplicationController\n#{snippet}")
+    end
+  end
+end
+
+Given /^I replace the users resources route with this one for Rails ([0-9]+):$/ do |version, snippet|
+  if framework_version?(version)
+    file_name = "config/routes.rb"
+    in_current_dir do
+      content = File.read(file_name)
+      File.open(file_name, 'w') do |f|
+        if framework_version?("3")
+          f << content.sub(/resources :users/, snippet)
+        else
+          f << content.sub(/map\.resources :users/, snippet)
+        end
+      end
+    end
+  end
+end
+
+Then /^I should receive a file "([^"]*)"$/ do |filename|
+  page.response_headers['Content-Disposition'].should =~ /#{filename}/
+end
+
+Given /^I run a rails generator to generate a "([^"]*)" migration$/ do |migration|
+  step %[I successfully run `bundle exec #{generator_command} migration #{migration}`]
+end
+
+Given /^I write to the "([^"]*)" migration file with:$/ do |migration, code|
+  migration_actual_path = Dir.glob("tmp/aruba/testapp/db/migrate/*_#{migration}.rb")[0]
+  migration_file = migration_actual_path[/testapp\/(.*)/, 1]
+  steps %{
+    Given I overwrite "#{migration_file}" with:
+      """
+      #{code}
+      """
+  }
 end
 
 Given /^I start the rails application$/ do
@@ -133,6 +179,10 @@ Then /^the file at "([^"]*)" should be the same as "([^"]*)"$/ do |web_file, pat
   end
   actual.force_encoding("UTF-8") if actual.respond_to?(:force_encoding)
   actual.should == expected
+end
+
+Then /^there should be no file at "([^"]*)"$/ do |path|
+  File.exist?(path).should be_false
 end
 
 When /^I configure the application to use "([^\"]+)" from this project$/ do |name|

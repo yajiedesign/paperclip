@@ -44,3 +44,46 @@ Feature: Rails integration
     Then I should see "Name: something"
     And I should see an image with a path of "http://s3.amazonaws.com/paperclip/attachments/1/original/5k.png"
     And the file at "http://s3.amazonaws.com/paperclip/attachments/1/original/5k.png" should be uploaded to S3
+
+  Scenario: Database storage integration test
+    Given I add this snippet to the User model:
+      """
+      has_attached_file :attachment, :storage => :database
+      """
+    And I add this snippet to the Users controller:
+      """
+      downloads_files_for :user, :attachment
+      """
+    And I run a rails generator to generate a "add_blob_to_users" migration
+    And I write to the "add_blob_to_users" migration file with:
+      """
+      class AddBlobToUsers < ActiveRecord::Migration
+        def self.up
+          add_column :users, :attachment_file, :binary
+        end
+        def self.down
+          remove_column :users, :attachment_file, :binary
+        end
+      end
+      """
+    And I run a migration
+    And I replace the users resources route with this one for Rails 3:
+      """
+      resources :users do
+        get :attachments
+      end
+      """
+    And I replace the users resources route with this one for Rails 2:
+      """
+      map.resources :users, :member => {:attachments => :get}
+      """
+    And I start the rails application
+    When I go to the new user page
+    And I fill in "Name" with "something"
+    And I attach the file "test/fixtures/5k.png" to "Attachment"
+    And I press "Submit"
+    Then I should see "Name: something"
+    And I should see an image with a path of "/users/1/attachments?style=original"
+    And there should be no file at "/system/attachments/1/original/5k.png"
+    And I follow "Download"
+    Then I should receive a file "5k.png"
