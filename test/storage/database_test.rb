@@ -23,7 +23,7 @@ class DatabaseTest < Test::Unit::TestCase
       rebuild_class :styles => { :thumbnail => { :geometry => "25x25#", :column => 'special_thumb_file' } }, :storage => :database, :column => "custom_file"
       @dummy = Dummy.create!
 
-      @file = File.open(fixture_file('5k.png'))
+      @file = File.open(fixture_file('5k.png'), "rb")
       @contents = @file.read
       @file.rewind
       @dummy.avatar = @file
