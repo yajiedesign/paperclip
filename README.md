@@ -26,15 +26,11 @@ To specify different column names for styles, use `:column` in the style definit
  
 If you need to create the BLOB columns (remember you should only be using this with a legacy database!!) ...you can use migrations like this:
 
-    add_column :users, :avatar_file,        :binary
-    add_column :users, :avatar_medium_file, :binary
-    add_column :users, :avatar_thumb_file,  :binary
+    add_column :users, :avatar_file,        :binary, :limit => 2.gigabytes
+    add_column :users, :avatar_medium_file, :binary, :limit => 1.gigabyte
+    add_column :users, :avatar_thumb_file,  :binary, :limit => 200.megabytes
 
-Note the "binary" migration will not work for the LONGBLOB type in MySQL for the file contents column. You may need to craft a SQL statement for your migration, depending on which database server you are using. Here's an example migration for MySQL:
-
-    execute 'ALTER TABLE users ADD COLUMN avatar_file LONGBLOB'
-    execute 'ALTER TABLE users ADD COLUMN avatar_medium_file LONGBLOB'
-    execute 'ALTER TABLE users ADD COLUMN avatar_thumb_file LONGBLOB'
+Note the "limit" option (when used for MySQL) will create a BLOB of the appropriate size (up to 4.gigabytes will create a LONGBLOB).
 
 To avoid performance problems loading all of the BLOB columns every time you access your ActiveRecord object, a class method is provided on your model called `select_without_file_columns_for`. This is set to a `:select` scope hash that will instruct `ActiveRecord::Base.find` to load all of the columns except the BLOB/file data columns.
  
