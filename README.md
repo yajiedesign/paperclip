@@ -71,3 +71,18 @@ Remember to add a route for the download to the controller which will handle dow
      resources :users do
        get :avatars
      end
+
+## Quick Start
+
+     bundle exec rails g paperclip User avatar
+     
+Edit that migration and add:
+
+     add_column :users, :avatar_file
+     
+Test in console
+
+     u = User.first
+     u.avatar = File.open('some-image.jpg','rb')
+     u.save
+     
